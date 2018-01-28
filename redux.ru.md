@@ -30,18 +30,75 @@ date: 18.01.2018
 
 Эти понятия неразрывно связаны. Редьюсер генерирует новое состояние приложения на основе пришедшего действия.
 
-Первый запуск редьюсера происходит с (state = undefined, action = { type: @@INIT }). Это внутренний action редакса, который обрабатывать не рекомендуется. А нужен он для того, чтобы редьюсер проинициализировал начальное состояние. 
+Первый запуск редьюсера происходит с `(state = undefined, action = { type: @@INIT })`. Это внутренний action редакса, который обрабатывать не рекомендуется. А нужен он для того, чтобы редьюсер проинициализировал начальное состояние. 
 
 Вообще говоря редьюсер всего один, но никто не мешает разбивать его на более маленькие функции (особенно, если приложение - крупное).  
 Эти функции поменьше также принято называть редьюсерами, если они также принимают первым параметром state и вторым action, и от них ожидается то же самое поведение, что и от родительского редьюсера (т.е. вернуть state по умолчанию, если пришел undefined, referential equality (TODO))
 
 ## combineReducers
-
+ 
 Из коробки в редаксе доступна утилитка `combineReducers` позволяющая создать редьюсер высшего порядка, который будет разбивать состояние-объект по ключам и для каждого из ключей запускать собственный под-редьюсер. 
 
-(TODO code sample)
+[jsfiddle](https://jsfiddle.net/bakineugene/6y50z3a2/)
+```javascript
+import { combineReducers } from 'redux';
 
-Часто combineReducers может быть недостаточно. (Описание проблемы) (Здесь примеры решения проблемы через thunks и через новый редьюсер)
+const PLUS1 = 'PLUS1';
+const MINUS1 = 'MINUS1';
+
+const reducerTemplate = (state = 0, action) => {
+	switch (action.type) {
+		case PLUS1:
+			return state + 1;
+		case MINUS1:
+			return state - 1;
+		default:
+			return state;
+	}
+};
+
+const reducer = combineReducers({
+	counterA: reducerTemplate,
+	counterB: reducerTemplate
+});
+
+reducer({ counterA: 5, counterB: 7 }, { type: PLUS1 }); // { counterA: 6, counter2: 8 }
+
+```
+
+Иногда combineReducers может быть недостаточно. Если для вычисления нового состояния недостаточно информации из данного ключа. Например если в примере выше мы захотим сделать дейтсвие, которое сбрасывает счетчики если сумма всех счетчиков - четное число. На уровне одного под-редьюсера очевидно недостаточно информации, чтобы принять такое решение. 
+
+Есть три варианта решения этой проблемы.
+
+### Пробрасывать общее состояние в дочерние редьюсеры
+
+[jsfiddle](https://jsfiddle.net/bakineugene/k5jxug3z/1/)
+```javascript
+
+const CLEAR_IF_EVEN = 'CLEAR_IF_EVEN';
+
+const reducerTemplate = (state = 0, action, global) => {
+
+	switch (action.type) {
+		case CLEAR_IF_EVEN:
+			if ((global.counterA + global.counterB) % 2 == 0) {
+				return 0;
+			}
+			return state;
+		default:
+			return state;
+	}
+};
+
+const reducer = (state, action) => ({
+	counterA: reducerTemplate(state.counterA, action, state),
+	counterB: reducerTemplate(state.counterB, action, state)
+});
+
+console.log(reducer({counterA: 1, counterB: 1}, {type: CLEAR_IF_EVEN})); // { counterA: 0, counterB: 0 }
+console.log(reducer({counterA: 2, counterB: 1}, {type: CLEAR_IF_EVEN})); // { counterA: 2, counterB: 1 }
+
+```
 
 Судя по багтрекеру редакса частым запросом является добавление в дочерние редьюсеры combineReducers общего состояния приложения третьим параметром.
 Однако эти запросы отклоняются, кмк, по трем причинам:
@@ -49,7 +106,12 @@ date: 18.01.2018
 2. Нет понимания какой именно стейт нужно пробрасывать. Оригинальный, или уже видоизмененный прошлыми дочерними редьюсерами.
 3. Такое поведение у встроенной утилиты провоцирует писать редьюсеры сильно связанные друг с другом.
 
-В целом совет таков - использовать combineReducers для простых случаев, (а сложных случаев избегать) а если приспичило писать явный дочерний редьюсер, куда явно передается нужный кусок общего состояния.
+В целом совет таков - использовать combineReducers для простых случаев, (а сложных случаев избегать) а если приспичило - писать отдельный дочерний редьюсер, куда явно передается нужный кусок общего состояния (см. далее). Но не стоит делать так по умолчанию.
+
+### Использовать redux-thunk
+
+### Написать отдельный редьюсер, требующий дополнительных данных
+
 
 ## Нормализация данных
 
@@ -69,9 +131,11 @@ https://redux.js.org/docs/recipes/reducers/UpdatingNormalizedData.html
 ### Normalizr
     * examples/real-world
 
+
 ## Примеры
 
 redux/examples/tree-view
+
 
 ## Action Creators
 
@@ -83,6 +147,7 @@ redux/examples/tree-view
         * https://reactjs.org/docs/update.html
         * https://github.com/mweststrate/immer
         * https://redux.js.org/docs/faq/ImmutableData.html#immutability-issues-with-redux
+
 
 # Middleware
 
