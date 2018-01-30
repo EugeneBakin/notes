@@ -110,7 +110,7 @@ console.log(reducer({counterA: 2, counterB: 1}, {type: CLEAR_IF_EVEN})); // { co
 
 ### Использовать redux-thunk
 
-redux-thunk - это middleware позволяющее передавать в `store.dispatch` функцию вместо POJO. Эта функция будет немедленно вызвана с параметрами `(store, dispatch)`; `store.getState()` дает возможность получить доступ к полному состоянию приложения. `dispatch` - отправить действие.
+redux-thunk - это middleware позволяющее, передавать в `store.dispatch` функцию вместо POJO. Эта функция будет немедленно вызвана с параметрами `(dispatch, getState)`; `getState()` дает возможность получить доступ к полному состоянию приложения. `dispatch` - отправить действие.
 
 
 [jsfiddle](https://jsfiddle.net/bakineugene/xpum4b38/)
