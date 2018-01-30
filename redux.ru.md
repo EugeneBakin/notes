@@ -110,6 +110,78 @@ console.log(reducer({counterA: 2, counterB: 1}, {type: CLEAR_IF_EVEN})); // { co
 
 ### Использовать redux-thunk
 
+redux-thunk - это middleware позволяющее передавать в `store.dispatch` функцию вместо POJO. Эта функция будет немедленно вызвана с параметрами `(store, dispatch)`; `store.getState()` дает возможность получить доступ к полному состоянию приложения. `dispatch` - отправить действие.
+
+
+[jsfiddle](https://jsfiddle.net/bakineugene/xpum4b38/)
+```javascript
+
+const CLEAR = 'CLEAR';
+import { combineReducers, createStore, applyMiddleware } from 'redux';
+import ReduxThunk from 'redux-thunk';
+
+const reducerTemplate = (state = 0, action) => {
+  switch (action.type) {
+	  case CLEAR:
+			return 0;
+		default:
+		  return state;
+	}
+};
+
+const reducer = combineReducers({
+  counterA: reducerTemplate,
+	counterB: reducerTemplate
+});
+
+const thunkAction = (dispatch, getState) => {
+  const state = getState();
+  if ((state.counterA + state.counterB) % 2 == 0) {
+	  dispatch({ type: CLEAR });
+	}
+};
+
+const store = createStore(reducer, { counterA: 1, counterB: 2 }, applyMiddleware(ReduxThunk));
+store.dispatch(thunkAction);
+console.log(store.getState()) // { counterA: 1, counterB: 2 }
+
+const storeEven = createStore(reducer, { counterA: 2, counterB: 2 }, applyMiddleware(ReduxThunk));
+storeEven.dispatch(thunkAction);
+console.log(storeEven.getState()) // { counterA: 0, counterB: 0 }
+
+```
+
+По моему мнению, этот вариант плох тем, что логика начинает выноситься за пределы редакса в так называемые **action creator**'ы. Между тем, если подумать, то action creator - это не часть редакса. С таким подхом редьюсеры постепенно превращаются в набор сеттеров. Скажем в примере выше можно было бы сделать вместо CLEAR - SET_COUNTER. 
+
+А можно вынести вообще всю логику из редьюсеров и прийти к вырожденному случаю:
+
+```javascript
+const SET = 'SET';
+
+const reducer = (state = {}, action) => {
+  switch (action.type) {
+		case SET:
+			return action.state;
+		default:
+			return state;
+		}
+};
+
+
+const thunkAction = (dispatch, getState) => {
+  const state = getState();
+	if ((state.counterA + state.counterB) % 2 == 0) {
+		dispatch({
+		  type: SET,
+			state: {
+				counterA: 0,
+				counterB: 0
+			}
+		});
+	}
+};
+```
+
 ### Написать отдельный редьюсер, требующий дополнительных данных
 
 
