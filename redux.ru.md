@@ -155,6 +155,7 @@ console.log(storeEven.getState()) // { counterA: 0, counterB: 0 }
 
 А можно вынести вообще всю логику из редьюсеров и прийти к вырожденному случаю:
 
+[jsfiddle](https://jsfiddle.net/bakineugene/pb1mk0t6/)
 ```javascript
 const SET = 'SET';
 
