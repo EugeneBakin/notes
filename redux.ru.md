@@ -47,19 +47,19 @@ const PLUS1 = 'PLUS1';
 const MINUS1 = 'MINUS1';
 
 const reducerTemplate = (state = 0, action) => {
-	switch (action.type) {
-		case PLUS1:
-			return state + 1;
-		case MINUS1:
-			return state - 1;
-		default:
-			return state;
-	}
+  switch (action.type) {
+    case PLUS1:
+      return state + 1;
+    case MINUS1:
+      return state - 1;
+    default:
+      return state;
+  }
 };
 
 const reducer = combineReducers({
-	counterA: reducerTemplate,
-	counterB: reducerTemplate
+  counterA: reducerTemplate,
+  counterB: reducerTemplate
 });
 
 reducer({ counterA: 5, counterB: 7 }, { type: PLUS1 }); // { counterA: 6, counter2: 8 }
@@ -79,20 +79,20 @@ const CLEAR_IF_EVEN = 'CLEAR_IF_EVEN';
 
 const reducerTemplate = (state = 0, action, global) => {
 
-	switch (action.type) {
-		case CLEAR_IF_EVEN:
-			if ((global.counterA + global.counterB) % 2 == 0) {
-				return 0;
-			}
-			return state;
-		default:
-			return state;
-	}
+  switch (action.type) {
+    case CLEAR_IF_EVEN:
+      if ((global.counterA + global.counterB) % 2 == 0) {
+        return 0;
+      }
+      return state;
+    default:
+      return state;
+  }
 };
 
 const reducer = (state, action) => ({
-	counterA: reducerTemplate(state.counterA, action, state),
-	counterB: reducerTemplate(state.counterB, action, state)
+  counterA: reducerTemplate(state.counterA, action, state),
+  counterB: reducerTemplate(state.counterB, action, state)
 });
 
 console.log(reducer({counterA: 1, counterB: 1}, {type: CLEAR_IF_EVEN})); // { counterA: 0, counterB: 0 }
@@ -122,23 +122,23 @@ import ReduxThunk from 'redux-thunk';
 
 const reducerTemplate = (state = 0, action) => {
   switch (action.type) {
-	  case CLEAR:
-			return 0;
-		default:
-		  return state;
-	}
+    case CLEAR:
+      return 0;
+    default:
+      return state;
+  }
 };
 
 const reducer = combineReducers({
   counterA: reducerTemplate,
-	counterB: reducerTemplate
+  counterB: reducerTemplate
 });
 
 const thunkAction = (dispatch, getState) => {
   const state = getState();
   if ((state.counterA + state.counterB) % 2 == 0) {
-	  dispatch({ type: CLEAR });
-	}
+    dispatch({ type: CLEAR });
+  }
 };
 
 const store = createStore(reducer, { counterA: 1, counterB: 2 }, applyMiddleware(ReduxThunk));
@@ -161,30 +161,84 @@ const SET = 'SET';
 
 const reducer = (state = {}, action) => {
   switch (action.type) {
-		case SET:
-			return action.state;
-		default:
-			return state;
-		}
+    case SET:
+      return action.state;
+    default:
+     return state;
+    }
 };
 
 
 const thunkAction = (dispatch, getState) => {
   const state = getState();
-	if ((state.counterA + state.counterB) % 2 == 0) {
-		dispatch({
-		  type: SET,
-			state: {
-				counterA: 0,
-				counterB: 0
-			}
-		});
-	}
+    if ((state.counterA + state.counterB) % 2 == 0) {
+    dispatch({
+      type: SET,
+      state: {
+        counterA: 0,
+        counterB: 0
+      }
+    });
+  }
 };
 ```
 
 ### Написать отдельный редьюсер, требующий дополнительных данных
 
+[jsfiddle](https://jsfiddle.net/bakineugene/5fbfz2e2/)
+```javascript
+
+import { combineReducers } from 'redux';
+
+const PLUS1 = 'PLUS1';
+const MINUS1 = 'MINUS1';
+const CLEAR_IF_EVEN = 'CLEAR_IF_EVEN';
+
+const reducerTemplate = (state = 0, action) => {
+  switch (action.type) {
+    case PLUS1:
+      return state + 1;
+    case MINUS1:
+      return state - 1;
+    default:
+      return state;
+  }
+};
+
+const combinedReducer = combineReducers({
+  counterA: reducerTemplate,
+  counterB: reducerTemplate
+});
+
+const isEven = (state) => (state.counterA + state.counterB) % 2 == 0;
+
+const clear = (state) => ({
+    counterA: 0,
+    counterB: 0
+});
+
+const reducer = (state, action) => {
+  state = combinedReducer(state, action);
+
+  switch (action.type) {
+    case CLEAR_IF_EVEN:
+      if(isEven(state)) {
+        return clear(state);
+      }
+      return state;
+    default:
+      return state;
+  }
+};
+
+reducer({ counterA: 5, counterB: 7 }, { type: CLEAR_IF_EVEN }); // { counterA: 0, counter2: 0 }
+reducer({ counterA: 6, counterB: 7 }, { type: CLEAR_IF_EVEN }); // { counterA: 6, counter2: 7 }
+
+```
+
+Пока этот вариант мне нравится больше всего.
+
+Да, остальные, при некоторых обстоятельствах, возможно, также имеют право на жизнь. Но стремиться все же стоит к тому, чтобы логика лежала в редьюсере.
 
 ## Нормализация данных
 
@@ -262,3 +316,5 @@ https://redux.js.org/docs/introduction/Ecosystem.html
     * examples/universal
     * examples/real-world
     * https://daveceddia.com/hot-reloading-create-react-app/
+
+[rest](https://redux.js.org/docs/recipes/StructuringReducers.html)
