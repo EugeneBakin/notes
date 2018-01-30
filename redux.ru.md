@@ -239,19 +239,18 @@ reducer({ counterA: 6, counterB: 7 }, { type: CLEAR_IF_EVEN }); // { counterA: 6
 Пока этот вариант мне нравится больше всего.
 
 Да, остальные, при некоторых обстоятельствах, возможно, также имеют право на жизнь. Но стремиться все же стоит к тому, чтобы логика лежала в редьюсере.
+Как я прочел в одном из тикетов в редаксовском баг трекере - понять куда надо складывать логику - значит постичь мастерство в редаксе.
 
 ## Нормализация данных
 
-https://redux.js.org/docs/recipes/reducers/NormalizingStateShape.html
-https://redux.js.org/docs/recipes/reducers/UpdatingNormalizedData.html
+Рекомендуется, чтобы стейт не содержал дублирующейся информации. Если что-то может быть вычислено - оно должно вычисляться, а не дублироваться в стейте.
+
+Для нормализации вложенных данных есть специальные инструменты вроде [Normalizr](https://github.com/paularmstrong/normalizr) и [Redux ORM](https://github.com/tommikaikkonen/redux-orm), но поскольку для моих задач они пока не очень подходят - ничего конкретного сказать про них не могу. 
 
 ### Селекторы
     * [Querying a Redux Store](https://medium.com/@adamrackis/querying-a-redux-store-37db8c7f3b0f)
     * [Normalizing Redux Stores for Maximum Code Reuse](https://medium.com/@adamrackis/normalizing-redux-stores-for-maximum-code-reuse-ae6e3844ae95)
     * https://github.com/gaearon/redux-devtools
-    * redux normalizr
-    * [Practical Redux: Redux-ORM Basics](http://blog.isquaredsoftware.com/2016/10/practical-redux-part-1-redux-orm-basics/)
-    * [Practical Redux: Redux-ORM Concepts and Techniques](http://blog.isquaredsoftware.com/2016/10/practical-redux-part-2-redux-orm-concepts-and-techniques/)
 
 ### Reselect
 
