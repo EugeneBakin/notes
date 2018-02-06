@@ -248,9 +248,70 @@ reducer({ counterA: 6, counterB: 7 }, { type: CLEAR_IF_EVEN }); // { counterA: 6
 Для нормализации вложенных данных есть специальные инструменты вроде [Normalizr](https://github.com/paularmstrong/normalizr) и [Redux ORM](https://github.com/tommikaikkonen/redux-orm), но поскольку для моих задач они пока не очень подходят - ничего конкретного сказать про них не могу. 
 
 ### Селекторы
-    * [Querying a Redux Store](https://medium.com/@adamrackis/querying-a-redux-store-37db8c7f3b0f)
-    * [Normalizing Redux Stores for Maximum Code Reuse](https://medium.com/@adamrackis/normalizing-redux-stores-for-maximum-code-reuse-ae6e3844ae95)
-    * https://github.com/gaearon/redux-devtools
+
+Селектор - специальная функция, вычисляющая из минимальной информации, содержащейся в стейте - некую производную информацию, с которой удобнее работать на этапе рендеринга.
+
+Предположим у нас есть редьюсер, отслеживающий кол-во запущенных асинхронных действий.  
+Каждое действие может требовать от нас показа значка загрузки пользователю, а может не требовать.  
+Для этого в стейте у нас есть специальный ключ - isLoading.
+
+```javascript
+const actionReducer = (state = [], action) => {
+  switch (action.type) {
+    case START_ACTION:
+      return Object.assign({}, state, {
+        [action.id]: action.showLoading
+      });
+    case END_ACTION:
+      return Object.keys(state).reduce((newState, key) => {
+        if (key !== action.id) {
+          newState[key] = state[key];
+        }
+        return newState;
+      }, {})
+  }
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case START_ACTION:
+    case END_ACTION:
+      const actions = actionReducer(state.actions, action);
+      return Object.assign({}, state, {
+        actions,
+        isLoading: actions.reduce((isLoading, nextAction) => {
+          return isLoading || nextAction;
+        }, false)
+      });
+  }
+}
+```
+
+Стейт содержит лишнюю информацию, поскольку параметр `isLoading` явно вычисляется из массива `actions`, также имеющегося в стейте.
+
+Можно вынести эту информацию в селектор и вызывать по необходимости при рендеринге.
+
+```javascript
+const reducer = (state, action) => {
+  switch (action.type) {
+    case START_ACTION:
+    case END_ACTION:
+      const actions = actionReducer(state.actions, action);
+      return Object.assign({}, state, {
+        actions,
+        isLoading: 
+      });
+  }
+}
+
+const isLoading = state => state.actions.reduce((isLoading, nextAction) => {
+  return isLoading || nextAction;
+}, false);
+
+console.log(isLoading({ actions: [false, true] })) // true
+console.log(isLoading({ actions: [false, false] })) // false
+
+```
 
 ### Reselect
 
@@ -317,3 +378,5 @@ https://redux.js.org/docs/introduction/Ecosystem.html
     * https://daveceddia.com/hot-reloading-create-react-app/
 
 [rest](https://redux.js.org/docs/recipes/StructuringReducers.html)
+
+https://github.com/gaearon/redux-devtools
