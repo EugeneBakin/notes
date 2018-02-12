@@ -247,7 +247,7 @@ reducer({ counterA: 6, counterB: 7 }, { type: CLEAR_IF_EVEN }); // { counterA: 6
 
 Но, если мы договоримся писать редьюсеры так, чтобы он возвращал новый объект только если состояние, за которое редьюсер отвечает, поменялось - то мы сможем проверять на необходимость новой отрисовки простым `===`
 
-Коробочный `combineReducers` - соблюдает эту договоренность. `Object.assign({}, {prop: 1}, {prop: 1})` - ясное дело, нет.
+Коробочный `combineReducers` - соблюдает эту договоренность. `Object.assign({}, {prop: 1}, {prop: 1})` - ясное дело, нет (а соответственно и Object Rest Spread оператор).
 
 ## Immutability
 
@@ -327,15 +327,52 @@ console.log(isLoading({ actions: [false, false] })) // false
 
 ### Reselect
 
+[runkit](https://runkit.com/eugenebakin/5a81a2c88ada1b0012f2c6be)
+
 С классическими селекторами из примера выше есть две проблемы:
 
 1. Вычисление, которое делает селектор, будет повторяться на каждое изменение состояния, даже если та часть состояния, от которой зависит результат - не поменялась.
 2. Из-за первой проблемы возникает вторая - если селектор возвращает сложную сущность (массив или объект), то это будет новый объект для каждого запуска селектора. О `Referential Equality` можно забыть.
 
-На помощь приходит небольшая библиотечка [reselect](https://github.com/reactjs/reselect), задача которой - мемоизировать все вызовы селектора. Т.е. вызов с одним набором параметров всегда вернет один и тот же результат. 
+На помощь приходит небольшая библиотечка [reselect](https://github.com/reactjs/reselect), задача которой - мемоизировать все вызовы селектора. Т.е. вызов с одним набором параметров всегда вернет один и тот же результат.
 
-### Normalizr
-    * examples/real-world
+```javascript
+var { createSelector } = require('reselect');
+ 
+const packages = {
+  package1: {
+    items: [ 1, 2, 3 ]
+  },
+  package2: {
+    items: [ 4, 5, 6 ]
+  }
+};
+ 
+const getPackage1 = state => state.package1;
+const getPackage2 = state => state.package2;
+const getItems = state => state.items;
+
+const getPackage1Items = createSelector(
+  getPackage1,
+  getItems
+);
+const getPackage2Items = createSelector(
+  getPackage2,
+  getItems
+);
+
+const getAllItems = createSelector(
+  getPackage1Items, getPackage2Items,
+  (items1, items2) => [].concat(items1, items2)
+);
+
+console.log(getAllItems(packages)) // [1, 2, 3, 4, 5, 6]
+
+const result1 = getAllItems(packages);
+const result2 = getAllItems(packages);
+
+console.log(result1 === result2); // true
+``` 
 
 
 ## Примеры
@@ -348,9 +385,7 @@ redux/examples/tree-view
 ## Immutability
     * immutability, shallow copy и ... destructuring (immutable performance (https://redux.js.org/docs/recipes/reducers/ImmutableUpdatePatterns.html))
         * Dan советует deepFreeze в тестах, чтобы избежать случайных мутаций
-        * refrential equality (combineReducers supports it)
-        * ... destructuring support
-        * https://reactjs.org/docs/update.html
+        * https://github.com/kolodny/immutability-helper
         * https://github.com/mweststrate/immer
         * https://redux.js.org/docs/faq/ImmutableData.html#immutability-issues-with-redux
 
