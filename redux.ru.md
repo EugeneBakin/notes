@@ -334,7 +334,7 @@ console.log(isLoading({ actions: [false, false] })) // false
 1. Вычисление, которое делает селектор, будет повторяться на каждое изменение состояния, даже если та часть состояния, от которой зависит результат - не поменялась.
 2. Из-за первой проблемы возникает вторая - если селектор возвращает сложную сущность (массив или объект), то это будет новый объект для каждого запуска селектора. О `Referential Equality` можно забыть.
 
-На помощь приходит небольшая библиотечка [reselect](https://github.com/reactjs/reselect), задача которой - мемоизировать все вызовы селектора. Т.е. вызов с одним набором параметров всегда вернет один и тот же результат.
+На помощь приходит небольшая библиотечка [reselect](https://github.com/reactjs/reselect), задача которой - мемоизировать все вызовы селектора. Т.е. вызов с одним набором параметров всегда вернет один и тот же результат. Нет лишних вычислений, а также сохраняется Referential Equality насколько это возможно.
 
 ```javascript
 var { createSelector } = require('reselect');
@@ -374,11 +374,48 @@ const result2 = getAllItems(packages);
 console.log(result1 === result2); // true
 ``` 
 
+## Композиция редьюсеров
 
-## Примеры
+Доки и примеры редакса содержат примеры написания редьюсеров для вложенных состояний. В этих случаях советуют использовать композицию редьюсеров.
 
-redux/examples/tree-view
+Для каждого из вложенных состояний пишется свой редьюсер обрабатывающий соответствующее действие на уровне этого состояния.
 
+Т.е. Редьюсер обрабатывающий массив объектов вызывает на действие добавления элемента в этот массив - вызывает дочерний редьюсер отвечающий за уровень объекта, чтобы проинициализировать состояние, и добавляет его к массиву.
+
+```javascript
+const CREATE_SWITCH = 'CREATE_SWITCH';
+const SWITCH = 'SWITCH';
+
+const switchReducer = (state = false, action) => {
+  switch (action.type) {
+  case (SWITCH): 
+    return !state;
+  default:
+    return state;
+  }
+};
+
+const switchesReducer = (state = {}, action) => {
+  switch (action.type) {
+  case (CREATE_SWITCH):
+  case (SWITCH):
+    return Object.assign({}, state, {[action.id]: switchReducer(state[action.id], action)});  
+  default:
+    return state;
+  }
+};
+
+let state = switchesReducer(undefined, {type: 'INIT'});
+console.log(state); // {}
+state = switchesReducer(state, {type: CREATE_SWITCH, id: 's1'});
+state = switchesReducer(state, {type: CREATE_SWITCH, id: 's2'});
+state = switchesReducer(state, {type: CREATE_SWITCH, id: 's3'});
+console.log(state); // {s1: false, s2: false, s3: false}
+state = switchesReducer(state, {type: SWITCH, id: 's2'});
+console.log(state); // {s1: false, s2: true, s3: false}
+```
+
+Хороший пример из доков редакса [github](https://github.com/reactjs/redux/tree/master/examples/tree-view)
 
 ## Action Creators
 
