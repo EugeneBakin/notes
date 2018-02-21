@@ -501,16 +501,6 @@ console.log(state); // {s1: false, s2: true, s3: false}
 
 Хороший пример из доков редакса [github](https://github.com/reactjs/redux/tree/master/examples/tree-view)
 
-## Action Creators
-
-## Immutability
-    * immutability, shallow copy и ... destructuring (immutable performance (https://redux.js.org/docs/recipes/reducers/ImmutableUpdatePatterns.html))
-        * Dan советует deepFreeze в тестах, чтобы избежать случайных мутаций
-        * https://github.com/kolodny/immutability-helper
-        * https://github.com/mweststrate/immer
-        * https://redux.js.org/docs/faq/ImmutableData.html#immutability-issues-with-redux
-
-
 # Middleware
 
     * redux-logger
