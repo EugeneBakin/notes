@@ -253,6 +253,90 @@ reducer({ counterA: 6, counterB: 7 }, { type: CLEAR_IF_EVEN }); // { counterA: 6
 
 Вместе с `Referential Equality` бок о бок идет `Immutability` - важное свойство, которое нужно соблюдать. Если напрямую изменить состояние приложения какой-либо мутирующей операцией `store.getState().property = 'changedProperty';` - то обнаружить что состояние приложения изменилось становится невозможно. 
 
+### Immutability + Referential Equality
+
+Понятно, что постоянно думать об этих вопросах нехочется, хочется решить этот вопрос раз и навсегда. Тут есть три варианта на текущий момент.
+
+#### React Immutability Helper
+
+[npm link](https://www.npmjs.com/package/immutability-helper)
+
+Эта библиотечка пришла из мира реакта - Позволяет создавать новые версии объектов с помощью специальных комманд.
+
+* {$push: array} push() all the items in array on the target.
+* {$unshift: array} unshift() all the items in array on the target.
+* {$splice: array of arrays} for each item in arrays call splice() on the target with the parameters provided by the item. Note: The items in the array are applied sequentially, so the order matters. The indices of the target may change during the operation.
+* {$set: any} replace the target entirely.
+* {$toggle: array of strings} toggles a list of boolean fields from the target object.
+* {$unset: array of strings} remove the list of keys in array from the target object.
+* {$merge: object} merge the keys of object with the target.
+* {$apply: function} passes in the current value to the function and updates it with the new returned value.
+* {$add: array of objects} add a value to a Map or Set. When adding to a Set you pass in an array of objects to add, when adding to a Map, you pass in [key, value] arrays like so: update(myMap, {$add: [['foo', 'bar'], ['baz', 'boo']]})
+* {$remove: array of strings} remove the list of keys in array from a Map or Set.
+
+```javascript
+var update = require("immutability-helper")
+
+state = {
+  array: [],
+  number: 1
+}
+
+const state2 = update(state, {array: {$push: ['value']}, number: {$set: 2}});
+console.log(state2); // { array: ['value'], number: 2 }
+
+const sameState = update(state, {number: {$set: 1}});
+console.log(sameState === state) // true
+```
+
+#### Immer
+
+С иммером все должно быть еще проще. Можно использовать обыденный синтаксис javascript как для мутации объектов, всю грязную работу иммер сделает сам.
+
+```javascript
+var produce = require("immer").default;
+
+state = {
+ array: [],
+  number: 1
+};
+
+var state2 = produce(state, next => {
+  next.array.push('value');
+  next.number = 2;
+})
+console.log(state2); // { array: ['value'], number: 2 }
+
+var sameState = produce(state, next => {
+  next.number = 1;
+});
+console.log(sameState === state); // true
+```
+
+#### Immutable-JS
+
+Immutable-JS - полноценная обертка над javascript структурами данных, защищающая даже от того, что стейт поменяют где-нибудь вне редьюсеров. Платой за такую безопасность является полный отказ от синтаксиса js.
+
+```javascript
+var {Map, List, is} = require("immutable");
+
+state = Map({
+  array: List([]),
+  number: 1
+});
+
+var state2 = state.withMutations(next => {
+  next.set('number', 2);
+  next.set('array', next.get('array').push('value'));
+});
+console.log(state2.toJS()); // { array: ['value'], number: 2 }
+
+var sameState = state.withMutations(next => {
+  next.set('number', 1);
+});
+console.log(is(state, sameState)); // true
+```
+
 ## Нормализация данных
 
 Рекомендуется, чтобы стейт не содержал дублирующейся информации. Если что-то может быть вычислено - оно должно вычисляться, а не дублироваться в стейте.
